@@ -2,7 +2,7 @@
 
 - python 3.8 up
 
-## How to run
+## :gear: How to run
 ```
 1) pip3 install pipenv
 ```
@@ -23,7 +23,7 @@
 5) uvicorn main:app --reload
 ```
 
-## Train with new dataset
+## :book: Train with new dataset
 ```
 1) pip3 install pipenv
 ```
