@@ -3,45 +3,59 @@
 - python 3.8 up
 
 ## :gear: How to run
+1) Install pipenv to crate a virtual environment
 ```
-1) pip3 install pipenv
-```
-
-```
-2) cd suppaluk
+pip3 install pipenv
 ```
 
+2) Change directory to suppaluk folder
 ```
-3) pipenv shell
-```
-
-```
-4) pip install -r requirements.txt
+cd suppaluk
 ```
 
+3) create a virtual environment
 ```
-5) uvicorn main:app --reload
+pipenv shell
+```
+
+4) Install all package that need
+```
+pip install -r requirements.txt
+```
+
+5) Run fast api
+```
+uvicorn main:app --reload
+```
+
+6) go to
+```
+locahost:8000/docs
 ```
 
 ## :book: Train with new dataset
+1) Install pipenv to crate a virtual environment
 ```
-1) pip3 install pipenv
-```
-
-```
-2) cd suppaluk
+pip3 install pipenv
 ```
 
+2) Change directory to suppaluk folder
 ```
-3) pipenv shell
-```
-
-```
-4) pip install -r requirements.txt
+cd suppaluk
 ```
 
+3) create a virtual environment
 ```
+pipenv shell
+```
+
+4) Install all package that need
+```
+pip install -r requirements.txt
+```
+
 5) add new data to folder dataset by use this pattern
+```
     ./dataset
         --> new_datasetfolder
             --> train
@@ -78,10 +92,9 @@
                     --> imgN
 ```
 
-```
 6) Edit model name and define path to image that test on new model in 'train.py'
-```
 
+7)  Run train.py for train model. It will show evaluation result and predict one image that you define the path
 ```
-7) python train.py 
+python train.py 
 ```
