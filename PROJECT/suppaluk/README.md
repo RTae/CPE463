@@ -77,3 +77,11 @@
                     ...
                     --> imgN
 ```
+
+```
+6) Edit model name and define path to image that test on new model in 'train.py'
+```
+
+```
+7) python train.py 
+```
