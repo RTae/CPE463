@@ -30,7 +30,7 @@ uvicorn main:app --reload
 
 6) go to
 ```
-locahost:8000/docs
+localhost:8000/docs
 ```
 
 ## :book: Train with new dataset
