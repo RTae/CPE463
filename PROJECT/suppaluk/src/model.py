@@ -2,32 +2,29 @@ import os
 import cv2
 import numpy as np
 import pickle5 as pickle
-from sklearn.svm import SVC
-from skimage.feature import hog
 import matplotlib.pyplot as plt
+from sklearn.svm import LinearSVC
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
+from skimage.feature import local_binary_pattern
+from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix  
 
 class suppaluk():
-    def __init__(self, train=False, 
-                path="./src/model.sav", 
-                img_size=(384, 512), 
-                orientations=10, 
-                pixels_per_cell=(32, 32), 
-                cells_per_block=(3, 3)):
+    def __init__(self, train=False, path="./src/model.sav", img_size=(512, 512), numPoints=54, radius=8, eps=1e-7):
         '''
-        Define HOG Parameter
-        # 1 Block -> 9 Cell : 1 Cell -> 10 bins : 90 bins/block [x1, x2, ..., x90]
+        Define LBP Parameter
+        # numPoints, radius
         '''
-        self.orientations = orientations # Bins
-        self.pixels_per_cell = pixels_per_cell # Number of pixels in cell
-        self.cells_per_block = cells_per_block # Number of cell in block
+        self.numPoints =  numPoints # Bins
+        self.radius = radius # Number of pixels in cell
+        self.eps = eps
         self.img_size = img_size # Img size
 
         # For train mode
         if not train:
             self.model = pickle.load(open(path, 'rb'))
+            print(self.model)
 
     # Read image from byte data
     def readImgByte(self, image_byte):
@@ -53,12 +50,18 @@ class suppaluk():
         plt.axis('off')
         plt.show()
     
-    # Extract feature by using HOG
+    # Extract feature by using LBP
     def extractFeature(self, img):
-        # Resize imgage
-        img_re = cv2.resize(img, self.img_size, interpolation = cv2.INTER_AREA)
-        descriptor = hog(img_re, self.orientations, self.pixels_per_cell, self.cells_per_block, block_norm='L2', feature_vector=True)
-        return descriptor
+        # of the image, and then use the LBP representation
+        # to build the histogram of patterns
+        lbp = local_binary_pattern(img, self.numPoints, self.radius, method="uniform")
+        hist, _ = np.histogram(lbp.ravel(), bins=np.arange(0, self.numPoints + 3),range=(0, self.numPoints + 2))
+
+        # normalize the histogram
+        hist = hist.astype("float")
+        hist /= (hist.sum() + self.eps)
+        # return the histogram of Local Binary Patterns
+        return hist
 
     # Draw text in picture
     def __drawText(self, img, text):
@@ -82,82 +85,65 @@ class suppaluk():
     
     # Prepare dataset for training
     def prepareData(self, path):
-        x_train = []
-        y_train = []
-        x_test = []
-        y_test = []
+        x = []
+        y = []
 
         print("--------------------------------------------------")
-        print("TRAIN")
+        print("EXTRACT FEATURE")
         print("--------------------------------------------------")
         # Loop every folder in dataset
         folders = os.listdir(path)
         for folder in folders:
             if folder != '.DS_Store':
-                TRAIN_PATH = f"{path}/{folder}/train"
-                for cat_folder in os.listdir(TRAIN_PATH):
-                    if cat_folder != '.DS_Store':
-                        for img_path in os.listdir(f"{TRAIN_PATH}/{cat_folder}"):
-                            if img_path != '.DS_Store':
-                                # Read image
-                                print(f"IMG : {TRAIN_PATH}/{cat_folder}/{img_path}")
-                                img = cv2.imread(f"{TRAIN_PATH}/{cat_folder}/{img_path}",0)
-                                # Extract feature
-                                img_re = cv2.resize(img, self.img_size, interpolation = cv2.INTER_AREA)
-                                descriptor = self.extractFeature(img_re)
-                                x_train.append(descriptor)
-                                # Label it
-                                if cat_folder == "bottle":
-                                    y_train.append(0)
-                                elif cat_folder == "snack":
-                                    y_train.append(1)
-                                else:
-                                    y_train.append(2)
+                FOLDER_PATH = os.listdir(f"{path}/{folder}")
+                for sub_folder in FOLDER_PATH:
+                    if sub_folder != '.DS_Store':
+                        TRAIN_PATH = f"{path}/{folder}/{sub_folder}"
+                        for cat_folder in os.listdir(TRAIN_PATH):
+                            if cat_folder != '.DS_Store':
+                                for img_path in os.listdir(f"{TRAIN_PATH}/{cat_folder}"):
+                                    if img_path != '.DS_Store':
+                                        # Read image
+                                        print(f"IMG : {TRAIN_PATH}/{cat_folder}/{img_path}")
+                                        img = cv2.imread(f"{TRAIN_PATH}/{cat_folder}/{img_path}",0)
+                                        # Extract feature
+                                        img_re = cv2.resize(img, self.img_size, interpolation = cv2.INTER_AREA)
+                                        descriptor = self.extractFeature(img_re)
+                                        x.append(descriptor)
+                                        # Label it
+                                        if cat_folder == "bottle":
+                                            y.append(0)
+                                        elif cat_folder == "snack":
+                                            y.append(1)
+                                        else:
+                                            y.append(2)
 
-        print("--------------------------------------------------")
-        print("TEST")
-        print("--------------------------------------------------")
-        # Loop every folder in dataset
-        folders = os.listdir(path)
-        for folder in folders:
-            if folder != '.DS_Store':
-                TEST_PATH = f"{path}/{folder}/test"
-                for cat_folder in os.listdir(TEST_PATH):
-                    if cat_folder != '.DS_Store':
-                        for img_path in os.listdir(f"{TEST_PATH}/{cat_folder}"):
-                            if img_path != '.DS_Store':
-                                # Read image
-                                print(f"IMG : {TEST_PATH}/{cat_folder}/{img_path}")
-                                img = cv2.imread(f"{TEST_PATH}/{cat_folder}/{img_path}",0)
-                                # Extract feature
-                                img_re = cv2.resize(img, self.img_size, interpolation = cv2.INTER_AREA)
-                                descriptor = self.extractFeature(img_re)
-                                x_test.append(descriptor)
-                                # Label it
-                                if cat_folder == "bottle":
-                                    y_test.append(0)
-                                elif cat_folder == "snack":
-                                    y_test.append(1)
-                                else:
-                                    y_test.append(2)
+        x = np.array(x)
+        y = np.array(y)                   
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, shuffle=True ,random_state=42)
 
         dataset = {
-            "train": [np.array(x_train), np.array(y_train)],
-            "test": [np.array(x_test), np.array(y_test)],
+            "train": [x_train, y_train],
+            "test": [x_test, y_test],
         }
 
         return dataset
 
     # Train with SVM
     def fit(self, dataset):
-
-        clf = make_pipeline(StandardScaler(), SVC(gamma='auto', random_state=42))
+        print("--------------------------------------------------")
+        print("TRAIN")
+        print("--------------------------------------------------")
+        clf = make_pipeline(StandardScaler(), LinearSVC(max_iter=200,random_state=42))
         train = dataset['train']
         clf.fit(train[0], train[1])
 
         return clf
     # Evaluate
     def result(sefl, model, dataset):
+        print("--------------------------------------------------")
+        print("Validate")
+        print("--------------------------------------------------")
         test = dataset['test']
         grid_predictions = model.predict(test[0])
 

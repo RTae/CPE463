@@ -19,7 +19,9 @@ model.saveModel(clf,name=f"{name}.sav")
 
 # Test
 model = suppaluk(path=f"{name}.sav")
-img = model.readImg("./dataset/grabage_real/test/metal/c04.jpg")
+path_img = "./datasets/grabage_real/train/bottle/bt02.jpg"
+img = model.readImg(path_img)
 img_pred = model.predict(img)
+print(f"Ground Truth: {path_img.split('/')[4]}")
 model.showImg(img_pred)
 
