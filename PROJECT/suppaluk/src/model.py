@@ -71,7 +71,7 @@ class suppaluk():
         thick = int(0.6 * (image_h + image_w) / 300) # Thickness
         color = (255,165,0) # Color // Orange
         c = 40 # Start point
-        a = 10  # Adj. point
+        a = 10 # Adj. point
 
         t_size = cv2.getTextSize(text, 0, fontScale, thickness=thick // 2)[0] # Calculate text size
         start_point = (c+a,c+a)
